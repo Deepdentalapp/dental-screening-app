@@ -1,62 +1,42 @@
+# dental_report.py
 
-from PIL import Image
-import io
+from PIL import Image, ImageDraw, ImageFont
 
-def detect_all_issues(images, patient_name, patient_age, logo_file, link):
-    # This is a placeholder implementation.
-    # Replace with your actual image analysis and PDF generation logic.
-
-    from fpdf import FPDF
-
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt="AffoDent Dental Screening Report", ln=True, align='C')
-    pdf.cell(200, 10, txt=f"Patient: {patient_name}, Age: {patient_age}", ln=True, align='L')
-
-    if logo_file:
-        logo_path = "logo.png"
-        with open(logo_path, "wb") as f:
-            f.write(logo_file.getbuffer())
-        pdf.image(logo_path, x=10, y=30, w=50)
-
-    y = 80
-    for i, img in enumerate(images):
-        if img:
-            image_path = f"img_{i}.png"
-            img.save(image_path)
-            pdf.image(image_path, x=10, y=y, w=100)
-            y += 70
-
-    pdf_output = io.BytesIO()
-    pdf.output(pdf_output)
-    pdf_output.seek(0)
-    return pdf_output
-    from PIL import ImageDraw, ImageFont
-
-def annotate_image(image, findings):
-    draw = ImageDraw.Draw(image)
-
-    try:
-        font = ImageFont.truetype("arial.ttf", size=20)
-    except:
-        font = ImageFont.load_default()
-
-    for finding in findings:
-        label = finding.get("label", "")
-        coords = finding.get("coords", (0, 0))
-        draw.text(coords, label, fill="red", font=font)
-
-    return image
-    def detect_all_issues(images):
-    # your code here
-    pass
+def detect_all_issues(image_index):
+    # Dummy issue detection for testing
+    return [
+        {"type": "caries", "tooth": 26, "bbox": (80, 60, 150, 120)},
+        {"type": "broken", "tooth": 12, "bbox": (160, 100, 220, 160)},
+        {"type": "lesion", "tooth": None, "bbox": (250, 140, 290, 180)}
+    ] if image_index % 2 == 0 else [
+        {"type": "missing", "tooth": 46, "bbox": (100, 60, 140, 100)},
+        {"type": "caries", "tooth": 36, "bbox": (180, 110, 240, 160)},
+        {"type": "malocclusion", "tooth": None, "bbox": None}
+    ]
 
 def annotate(image, issues):
-    # your code here
-    pass
+    img = image.copy()
+    draw = ImageDraw.Draw(img)
+    font = ImageFont.load_default()
+    for issue in issues:
+        bbox = issue["bbox"]
+        t_type = issue["type"]
+        tooth = issue["tooth"]
+        color = {"caries": "red", "missing": "blue", "broken": "orange", "lesion": "green"}.get(t_type, "black")
+        if bbox:
+            x1, y1, x2, y2 = bbox
+            label = f"{t_type} T{tooth}" if tooth else t_type
+            if t_type == "lesion":
+                cx = (x1 + x2) // 2
+                cy = (y1 + y2) // 2
+                r = (x2 - x1) // 2
+                draw.ellipse((cx - r, cy - r, cx + r, cy + r), outline=color, width=3)
+            else:
+                draw.rectangle([x1, y1, x2, y2], outline=color, width=3)
+            draw.text((x1, y1 - 10), label, fill=color, font=font)
+    return img
 
-def create_pdf(images, findings, output_path):
-    # your code here
+def create_pdf(images, findings, output_path="output.pdf"):
+    # Placeholder function for PDF creation
     pass
     
