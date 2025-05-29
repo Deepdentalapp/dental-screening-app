@@ -48,4 +48,4 @@ if st.button("Generate Report"):
             file_name=f"{patient_name}_Dental_Report.pdf",
             mime="application/pdf"
         )
-reportlab
+
