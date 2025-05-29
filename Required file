@@ -2,3 +2,10 @@ requirements.txt
 reportlab
 pillow
 qrcode
+reportlab
+
+reportlab
+pillow
+qrcode
+opencv-python
+streamlit
