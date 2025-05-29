@@ -1,42 +1,75 @@
-# dental_report.py
+import io
+import datetime
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.utils import ImageReader
+import qrcode
 
-from PIL import Image, ImageDraw, ImageFont
+def create_pdf(images, findings, filenames, logo_image, patient_name, patient_age, website_or_whatsapp_link):
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
 
-def detect_all_issues(image_index):
-    # Dummy issue detection for testing
-    return [
-        {"type": "caries", "tooth": 26, "bbox": (80, 60, 150, 120)},
-        {"type": "broken", "tooth": 12, "bbox": (160, 100, 220, 160)},
-        {"type": "lesion", "tooth": None, "bbox": (250, 140, 290, 180)}
-    ] if image_index % 2 == 0 else [
-        {"type": "missing", "tooth": 46, "bbox": (100, 60, 140, 100)},
-        {"type": "caries", "tooth": 36, "bbox": (180, 110, 240, 160)},
-        {"type": "malocclusion", "tooth": None, "bbox": None}
-    ]
+    logo_resized = logo_image.resize((80, 80))
+    qr = qrcode.QRCode(box_size=3, border=2)
+    qr.add_data(website_or_whatsapp_link)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color="black", back_color="white")
+    qr_buf = io.BytesIO()
+    qr_img.save(qr_buf, format="PNG")
+    qr_buf.seek(0)
 
-def annotate(image, issues):
-    img = image.copy()
-    draw = ImageDraw.Draw(img)
-    font = ImageFont.load_default()
-    for issue in issues:
-        bbox = issue["bbox"]
-        t_type = issue["type"]
-        tooth = issue["tooth"]
-        color = {"caries": "red", "missing": "blue", "broken": "orange", "lesion": "green"}.get(t_type, "black")
-        if bbox:
-            x1, y1, x2, y2 = bbox
-            label = f"{t_type} T{tooth}" if tooth else t_type
-            if t_type == "lesion":
-                cx = (x1 + x2) // 2
-                cy = (y1 + y2) // 2
-                r = (x2 - x1) // 2
-                draw.ellipse((cx - r, cy - r, cx + r, cy + r), outline=color, width=3)
-            else:
-                draw.rectangle([x1, y1, x2, y2], outline=color, width=3)
-            draw.text((x1, y1 - 10), label, fill=color, font=font)
-    return img
+    pt_id = f"PT{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+    today = datetime.datetime.now().strftime("%d-%m-%Y")
+    summary_issues = []
 
-def create_pdf(images, findings, output_path="output.pdf"):
-    # Placeholder function for PDF creation
-    pass
+    for idx, img in enumerate(images):
+        summary_issues += findings[idx]
+        c.drawImage(ImageReader(logo_resized), 50, height - 90, width=80, height=80)
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(140, height - 40, "AffoDent")
+        c.setFont("Helvetica", 11)
+        c.drawString(140, height - 60, "House no 4, College Hostel Road, Panbazar")
+        c.drawString(140, height - 75, "Guwahati, Assam - 781001")
+        c.drawString(140, height - 90, "Mobile: 9864272102")
+        c.drawString(400, height - 40, f"Patient ID: {pt_id}-{idx+1:02d}")
+        c.drawString(400, height - 60, f"Date: {today}")
+        c.drawString(400, height - 75, f"Name: {patient_name}")
+        c.drawString(400, height - 90, f"Age: {patient_age}")
+        c.drawString(50, height - 120, f"Image: {filenames[idx]}")
+        img_resized = img.resize((400, 250))
+        c.drawImage(ImageReader(img_resized), 50, height - 430, width=400, height=250)
+        y = height - 450
+        for issue in findings[idx]:
+            line = f"• {issue['type'].capitalize()}"
+            if issue["tooth"]:
+                line += f" (Tooth {issue['tooth']})"
+            c.drawString(50, y, line)
+            y -= 18
+        c.drawImage(ImageReader(qr_buf), 50, 30, width=60, height=60)
+        c.drawString(400, 60, "__________________________")
+        c.drawString(400, 45, "Dr. Deep Sharma")
+        c.drawString(400, 30, "Signature")
+        c.showPage()
+
+    # Summary Page
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, height - 40, f"Diagnosis Summary - {patient_name} (Age: {patient_age})")
+    c.setFont("Helvetica", 11)
+    y = height - 80
+    if summary_issues:
+        grouped = {}
+        for issue in summary_issues:
+            key = issue['type']
+            grouped.setdefault(key, []).append(issue.get("tooth"))
+        for k, v in grouped.items():
+            line = f"• {k.capitalize()}: {', '.join(f'T{t}' if t else 'N/A' for t in v)}"
+            c.drawString(50, y, line)
+            y -= 18
+    else:
+        c.drawString(50, y, "No significant findings.")
+    c.showPage()
+    c.save()
+    buffer.seek(0)
+    return buffer.getvalue()
     
