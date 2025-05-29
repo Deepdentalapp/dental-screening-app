@@ -48,4 +48,4 @@ def annotate_image(image, findings):
         draw.text(coords, label, fill="red", font=font)
 
     return image
-    Add annotate_image to dental_report
+    
