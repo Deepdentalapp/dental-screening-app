@@ -1,41 +1,50 @@
-
 import streamlit as st
 from PIL import Image
 from dental_report import detect_all_issues, annotate, create_pdf
-import io
 
-st.set_page_config(page_title="AffoDent Dental AI", layout="centered")
-st.title("🦷 AffoDent Dental Screening Tool")
+st.set_page_config(page_title="Dental AI Screening", layout="wide")
 
+st.title("🦷 Dental AI Screening Report Generator")
+
+uploaded_files = st.file_uploader(
+    "Upload 6 standard dental images (frontal, lateral, occlusal, etc.)",
+    type=["jpg", "jpeg", "png"],
+    accept_multiple_files=True
+)
+
+logo_file = st.file_uploader("Upload Clinic Logo", type=["jpg", "jpeg", "png"])
 patient_name = st.text_input("Patient Name")
 patient_age = st.text_input("Patient Age")
-link = "https://wa.me/919864272102"
+link = st.text_input("Clinic Website or WhatsApp Link", value="https://affodent.in")
 
-logo_file = st.file_uploader("Upload clinic logo", type=["png", "jpg", "jpeg"])
-if logo_file:
-    logo_image = Image.open(logo_file)
-
-uploaded_files = st.file_uploader("Upload 6 intraoral images", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
-if uploaded_files and logo_file and patient_name and patient_age:
+if st.button("Generate Report"):
     if len(uploaded_files) != 6:
-        st.warning("Please upload exactly 6 images.")
+        st.error("Please upload exactly 6 dental images.")
+    elif not logo_file:
+        st.error("Please upload your clinic logo.")
+    elif not patient_name or not patient_age:
+        st.error("Please enter patient name and age.")
     else:
-        images = [Image.open(f).convert("RGB") for f in uploaded_files]
-        filenames = [f.name for f in uploaded_files]
+        images = [Image.open(file).convert("RGB") for file in uploaded_files]
+        logo_image = Image.open(logo_file).convert("RGB")
 
-        if st.button("Run Diagnosis"):
-            all_findings = []
-            annotated_images = []
+        annotated_images = []
+        all_findings = []
+        filenames = []
 
-            for idx, img in enumerate(images):
-                issues = detect_all_issues(idx)
-                annotated = annotate(img, issues)
-                annotated_images.append(annotated)
-                all_findings.append(issues)
+        for img, file in zip(images, uploaded_files):
+            findings = detect_all_issues(img)
+            annotated = annotate(img, findings)
+            annotated_images.append(annotated)
+            all_findings.append(findings)
+            filenames.append(file.name)
 
-            st.success("Diagnosis complete! Generating PDF report...")
-            pdf_bytes = create_pdf(annotated_images, all_findings, filenames, logo_image, patient_name, patient_age, link)
+        pdf_bytes = create_pdf(annotated_images, all_findings, filenames, logo_image, patient_name, patient_age, link)
+        st.success("PDF report generated successfully!")
 
-            st.download_button("📄 Download PDF Report", data=pdf_bytes, file_name="dental_report.pdf", mime="application/pdf")
-else:
-    st.info("Please upload all required fields: 6 images, logo, and patient details.")
+        st.download_button(
+            label="📄 Download Report",
+            data=pdf_bytes,
+            file_name=f"{patient_name}_Dental_Report.pdf",
+            mime="application/pdf"
+        )
