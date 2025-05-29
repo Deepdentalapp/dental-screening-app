@@ -48,4 +48,15 @@ def annotate_image(image, findings):
         draw.text(coords, label, fill="red", font=font)
 
     return image
+    def detect_all_issues(images):
+    # your code here
+    pass
+
+def annotate(image, issues):
+    # your code here
+    pass
+
+def create_pdf(images, findings, output_path):
+    # your code here
+    pass
     
