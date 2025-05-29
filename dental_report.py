@@ -32,3 +32,19 @@ def detect_all_issues(images, patient_name, patient_age, logo_file, link):
     pdf.output(pdf_output)
     pdf_output.seek(0)
     return pdf_output
+    from PIL import ImageDraw, ImageFont
+
+def annotate_image(image, findings):
+    draw = ImageDraw.Draw(image)
+
+    try:
+        font = ImageFont.truetype("arial.ttf", size=20)
+    except:
+        font = ImageFont.load_default()
+
+    for finding in findings:
+        label = finding.get("label", "")
+        coords = finding.get("coords", (0, 0))
+        draw.text(coords, label, fill="red", font=font)
+
+    return image
