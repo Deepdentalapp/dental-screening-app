@@ -1,9 +1,19 @@
+# import streamlit as st
+# from PIL import Image
+# from dental_report import detect_all_issues, annotate, create_pdf
+# st.title("🦷 Dental AI Screening Report Generator")
+# st.set_page_config(page_title="Dental AI Screening", layout="wide")
+# ✅ Put this at the very top of the file!
 import streamlit as st
-from PIL import Image
-from dental_report import detect_all_issues, annotate, create_pdf
-st.title("🦷 Dental AI Screening Report Generator")
-st.set_page_config(page_title="Dental AI Screening", layout="wide")
+st.set_page_config(page_title="Dental Screening Report", layout="centered")
 
+# ✅ Now import everything else
+from PIL import Image
+import requests
+import os
+
+# ✅ Then continue with Streamlit UI
+st.title("🦷 Dental Screening Report Generator")
 
 
 uploaded_files = st.file_uploader(
