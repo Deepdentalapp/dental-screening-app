@@ -4,3 +4,7 @@ numpy
 pillow
 reportlab
 qrcode
+streamlit
+reportlab
+requests
+pillow
